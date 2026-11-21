@@ -11,8 +11,31 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split rarely-changing library code into stable, separately-cached chunks so an
+        // app-code redeploy doesn't invalidate the browser's cached copy of React/Mantine.
+        // Recharts is intentionally NOT listed, so it stays in the lazy dashboard chunk.
+        manualChunks(id: string) {
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react-vendor'
+          }
+          if (/[\\/]node_modules[\\/](@mantine|@tabler)[\\/]/.test(id)) {
+            return 'mantine-vendor'
+          }
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
+    proxy: {
+      '/api': 'http://localhost:8000',
+    },
+  },
+  preview: {
+    port: 4173,
     proxy: {
       '/api': 'http://localhost:8000',
     },
