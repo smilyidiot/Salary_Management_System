@@ -1,0 +1,29 @@
+[project]
+name = "salary-management-backend"
+version = "0.1.0"
+description = "Salary management backend (FastAPI + SQLAlchemy + SQLite)"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115,<0.116",
+    "uvicorn[standard]>=0.32,<0.33",
+    "sqlalchemy>=2.0,<2.1",
+    "pydantic>=2.9,<3.0",
+    "pydantic-settings>=2.6,<3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9.0",
+    "httpx>=0.27,<0.28",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
