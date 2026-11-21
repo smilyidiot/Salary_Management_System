@@ -44,9 +44,14 @@ TODAY = date(2026, 11, 21)
 
 
 def _round_amount(amount: Decimal, currency: str) -> Decimal:
-    """Round to a market-sensible step: large-denomination currencies to the nearest 1000."""
+    """Round to a market-sensible step, then to cents so money always has 2 decimals.
+
+    Quantizing to cents keeps the in-memory value identical to what the ``Numeric(14, 2)``
+    column round-trips, so stored and computed representations never diverge.
+    """
     step = Decimal("1000") if currency in ("INR",) else Decimal("100")
-    return (amount / step).quantize(Decimal("1")) * step
+    rounded = (amount / step).quantize(Decimal("1")) * step
+    return rounded.quantize(Decimal("0.01"))
 
 
 def _weighted_choice(rng: random.Random, items: list, weights: list[int]):
