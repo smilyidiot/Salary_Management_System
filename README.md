@@ -7,6 +7,11 @@ manage employee salary data and answer questions about how the org pays people.
 Built as a take-home assessment. See [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) for
 scope and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design.
 
+![Architecture overview](docs/diagrams/component.png)
+
+_(Full set of diagrams — data model, deployment topology, request flow — in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).)_
+
 ## Tech stack
 
 | Layer    | Choice                                   |

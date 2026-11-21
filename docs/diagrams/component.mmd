@@ -1,0 +1,17 @@
+flowchart LR
+    subgraph Client["Browser"]
+        UI["React SPA<br>(Vite + TypeScript + Mantine)"]
+    end
+
+    subgraph Server["Backend service (FastAPI / Uvicorn)"]
+        R["Routers<br>/api/employees, /api/analytics"]
+        S["Services<br>compensation, analytics"]
+        M["Models / ORM<br>SQLAlchemy 2.0"]
+    end
+
+    DB[("SQLite<br>employees + compensation_records")]
+
+    UI -- "JSON over HTTP /api/*" --> R
+    R --> S
+    S --> M
+    M --> DB
