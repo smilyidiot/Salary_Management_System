@@ -11,13 +11,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from sqlalchemy import Select, case, func, or_, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import CompensationRecord, Employee, EmploymentStatus
-from app.reference import FX_TO_USD
+from app.models import Employee, EmploymentStatus
 from app.schemas import CompensationCreate, EmployeeCreate, EmployeeUpdate
 from app.services.compensation import record_salary_change
+from app.services.salary_sql import annual_local_expr, latest_comp_subquery, usd_expr
 
 SORT_FIELDS = {"full_name", "country", "department", "level", "hire_date", "current_salary_usd"}
 
@@ -42,34 +42,6 @@ class EmployeeRow:
     current_salary: Decimal | None
     currency: str | None
     current_salary_usd: Decimal | None
-
-
-def _latest_comp_subquery():
-    """Subquery with exactly the most recent compensation record per employee."""
-    rn = func.row_number().over(
-        partition_by=CompensationRecord.employee_id,
-        order_by=(CompensationRecord.effective_from.desc(), CompensationRecord.id.desc()),
-    ).label("rn")
-    ranked = select(
-        CompensationRecord.employee_id.label("eid"),
-        CompensationRecord.base_amount.label("amount"),
-        CompensationRecord.currency.label("currency"),
-        CompensationRecord.pay_frequency.label("freq"),
-        rn,
-    ).subquery()
-    return select(ranked).where(ranked.c.rn == 1).subquery()
-
-
-def _usd_expr(latest):
-    """SQL expression: current salary annualized and converted to USD."""
-    freq_mult = case((latest.c.freq == "monthly", 12), else_=1)
-    fx = case({code: float(rate) for code, rate in FX_TO_USD.items()}, value=latest.c.currency)
-    return latest.c.amount * freq_mult * fx
-
-
-def _annual_local_expr(latest):
-    freq_mult = case((latest.c.freq == "monthly", 12), else_=1)
-    return latest.c.amount * freq_mult
 
 
 def _apply_filters(stmt: Select, latest, filters: EmployeeFilters) -> Select:
@@ -106,8 +78,8 @@ def _rows_from(result) -> list[EmployeeRow]:
 
 
 def _base_select(latest):
-    annual_local = _annual_local_expr(latest).label("annual_local")
-    usd = _usd_expr(latest).label("salary_usd")
+    annual_local = annual_local_expr(latest).label("annual_local")
+    usd = usd_expr(latest).label("salary_usd")
     return (
         select(Employee, annual_local, latest.c.currency, usd)
         .join(latest, latest.c.eid == Employee.id, isouter=True),
@@ -116,7 +88,7 @@ def _base_select(latest):
 
 
 def list_employees(session: Session, filters: EmployeeFilters) -> tuple[list[EmployeeRow], int]:
-    latest = _latest_comp_subquery()
+    latest = latest_comp_subquery()
     stmt, usd_label = _base_select(latest)
     stmt = _apply_filters(stmt, latest, filters)
 
@@ -140,7 +112,7 @@ def list_employees(session: Session, filters: EmployeeFilters) -> tuple[list[Emp
 
 def iter_all_for_export(session: Session, filters: EmployeeFilters) -> list[EmployeeRow]:
     """Same filtered set as the list, but every matching row (no pagination) for CSV export."""
-    latest = _latest_comp_subquery()
+    latest = latest_comp_subquery()
     stmt, _ = _base_select(latest)
     stmt = _apply_filters(stmt, latest, filters).order_by(Employee.full_name.asc(), Employee.id.asc())
     return _rows_from(session.execute(stmt).all())

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.config import settings
 from app.db import create_all
-from app.routers import employees, meta
+from app.routers import analytics, employees, meta
 
 
 @asynccontextmanager
@@ -44,4 +44,5 @@ def health() -> dict[str, str]:
 
 
 app.include_router(employees.router)
+app.include_router(analytics.router)
 app.include_router(meta.router)

@@ -119,3 +119,42 @@ class PaginatedEmployees(BaseModel):
     page: int
     page_size: int
     pages: int
+
+
+# ---------------------------------------------------------------------------
+# Analytics
+# ---------------------------------------------------------------------------
+
+
+class GroupStat(BaseModel):
+    """Pay statistics for one country or department. All money in USD."""
+
+    key: str
+    label: str
+    headcount: int
+    avg_salary_usd: Decimal
+    median_salary_usd: Decimal
+    total_payroll_usd: Decimal
+
+
+class StatusCount(BaseModel):
+    status: EmploymentStatus
+    count: int
+
+
+class DistributionBucket(BaseModel):
+    label: str
+    min_usd: int
+    max_usd: int | None  # open-ended for the top band
+    count: int
+
+
+class AnalyticsSummary(BaseModel):
+    """Headline numbers. Pay figures cover the current workforce (excludes terminated)."""
+
+    total_headcount: int
+    workforce_headcount: int  # active + on_leave, i.e. the pay population
+    total_payroll_usd: Decimal
+    average_salary_usd: Decimal
+    median_salary_usd: Decimal
+    by_status: list[StatusCount]
