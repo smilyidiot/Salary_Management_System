@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.config import settings
 from app.db import create_all
+from app.routers import employees, meta
 
 
 @asynccontextmanager
@@ -40,3 +41,7 @@ app.add_middleware(
 def health() -> dict[str, str]:
     """Liveness probe used by the frontend and by deployment health checks."""
     return {"status": "ok", "version": __version__}
+
+
+app.include_router(employees.router)
+app.include_router(meta.router)
