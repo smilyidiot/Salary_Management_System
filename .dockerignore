@@ -1,0 +1,18 @@
+# Keep the build context small and reproducible — these are rebuilt or irrelevant.
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+
+backend/.venv
+backend/*.db
+backend/static
+
+frontend/node_modules
+frontend/dist
+
+.git
+.gitignore
+.claude
+docs
+*.md

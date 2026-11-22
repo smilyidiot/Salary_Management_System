@@ -1,0 +1,12 @@
+# Render Blueprint — deploys the single Docker image as a free web service.
+# In the Render dashboard: New > Blueprint, point it at this repo, and it reads this file.
+services:
+  - type: web
+    name: salary-management
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"

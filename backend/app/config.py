@@ -20,5 +20,13 @@ class Settings(BaseSettings):
     # Permit the Vite dev server to call the API during local development.
     cors_origins: list[str] = ["http://localhost:5173"]
 
+    # Directory of the built frontend (dist). When it exists, the API also serves the SPA,
+    # so the whole app runs as a single service in production. Empty/missing in dev.
+    static_dir: str = str(BASE_DIR / "static")
+
+    # Auto-seed this many employees on startup if the database is empty (e.g. first boot in
+    # a deployed environment). Set to 0 to disable.
+    seed_on_startup: int = 10_000
+
 
 settings = Settings()

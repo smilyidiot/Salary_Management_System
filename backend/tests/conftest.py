@@ -17,6 +17,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.config import settings
 from app.db import Base, get_db
 from app.main import app
 
@@ -56,7 +57,14 @@ def client(session_factory) -> Iterator[TestClient]:
         finally:
             session.close()
 
+    # The app lifespan auto-seeds an empty database; disable that for tests so they control
+    # their own data and never touch the real database.
+    original_seed = settings.seed_on_startup
+    settings.seed_on_startup = 0
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
+        settings.seed_on_startup = original_seed

@@ -114,6 +114,45 @@ python -m app.seed --count 500  # smaller dataset
 python -m app.seed --seed 7     # different deterministic dataset
 ```
 
+## Deployment
+
+The app ships as a **single service**: FastAPI serves the built React assets (with an SPA
+fallback) and the JSON API from one process, and auto-seeds the database on first boot if it
+is empty. A multi-stage `Dockerfile` builds the frontend and bakes a seeded database into the
+image.
+
+### Run the container locally
+
+```bash
+docker build -t salary-management .
+```
+
+```bash
+docker run -p 8000:8000 salary-management
+```
+
+Then open http://localhost:8000 — the full app (UI + API) runs from the one container.
+
+### Deploy to Render (free)
+
+1. Push this repository to GitHub.
+2. In Render: **New → Blueprint**, connect the repo. Render reads [`render.yaml`](render.yaml)
+   and builds the `Dockerfile` as a free web service.
+3. When the build finishes, open the provided URL.
+
+> The free tier spins the service down when idle, so the **first request after a lull takes
+> ~30–60s** (cold start) before the app responds. The `Dockerfile` runs identically on any
+> container host (Fly.io, Railway, Cloud Run, …) if you prefer no cold start.
+
+### Configuration (environment variables)
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SALARY_DATABASE_URL` | local SQLite file | Database connection (swap for Postgres by URL) |
+| `SALARY_STATIC_DIR` | `backend/static` | Directory of the built frontend to serve |
+| `SALARY_SEED_ON_STARTUP` | `10000` | Auto-seed this many employees if the DB is empty (0 disables) |
+| `PORT` | `8000` | Port to bind (set automatically by most PaaS) |
+
 ## Documentation & artifacts
 
 | Document | Contents |
