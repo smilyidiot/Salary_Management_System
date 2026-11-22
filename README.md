@@ -12,52 +12,114 @@ scope and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the design.
 _(Full set of diagrams — data model, deployment topology, request flow — in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).)_
 
+## Features
+
+- **Employee directory** — server-side search (name/code/email), filtering (country,
+  department, status), sorting, and pagination that stays fast at 10k rows.
+- **Employee profile** — identity, manager, and an **effective-dated salary history** with a
+  record-a-salary-change flow (history is append-only, never overwritten).
+- **Create / edit employees** — with a required starting compensation record.
+- **Pay analytics dashboard** — total payroll, average & median salary, headcount and pay
+  **by country and department**, and a salary distribution — all normalized to USD.
+- **CSV export** of the filtered directory.
+- **Deterministic seed** of 10,000 employees with realistic multi-country salary history.
+
 ## Tech stack
 
-| Layer    | Choice                                   |
-| -------- | ---------------------------------------- |
-| Backend  | Python · FastAPI · SQLAlchemy 2.0        |
-| Database | SQLite (relational)                      |
-| Frontend | React · Vite · TypeScript · Mantine      |
+| Layer    | Choice                                     |
+| -------- | ------------------------------------------ |
+| Backend  | Python · FastAPI · SQLAlchemy 2.0          |
+| Database | SQLite (relational)                        |
+| Frontend | React · Vite · TypeScript · Mantine · Recharts |
 | Tests    | pytest (backend) · Vitest + RTL (frontend) |
 
 ## Project layout
 
 ```
-backend/    FastAPI app, models, services, seed script, tests
-frontend/   React + Vite single-page app
-docs/        requirements, architecture, decisions, prompts, demo script
+backend/
+  app/
+    models.py          Employee + effective-dated CompensationRecord
+    schemas.py         Pydantic request/response contracts
+    services/          business logic (compensation, analytics, shared salary SQL)
+    routers/           HTTP layer (employees, analytics, reference)
+    reference.py       countries, FX rates, salary bands
+    seed.py            deterministic 10k seed
+  tests/               pytest unit + API tests
+frontend/
+  src/
+    api/               typed API client + types + reference context
+    components/         shared UI (layout, status badge, modals)
+    pages/             directory, detail, new employee, dashboard
+    lib/               formatting + option helpers
+    test/              Vitest setup + render helper
+docs/                   requirements, architecture, decisions, prompts, demo
 ```
 
 ## Quick start
 
 > Prerequisites: Python 3.10+, Node 18+.
 
-### Backend
+### 1. Backend (API on :8000)
 
 ```bash
 cd backend
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
-pip install -e ".[dev]"
-python -m app.seed          # seed 10,000 employees
-uvicorn app.main:app --reload   # http://localhost:8000  (docs at /docs)
 ```
 
-### Frontend
+Activate the venv — Windows: `.venv\Scripts\activate` · macOS/Linux: `source .venv/bin/activate` — then:
+
+```bash
+pip install -e ".[dev]"
+python -m app.seed
+uvicorn app.main:app --reload
+```
+
+The API is at http://localhost:8000, with interactive docs at http://localhost:8000/docs.
+
+### 2. Frontend (app on :5173)
 
 ```bash
 cd frontend
 npm install
-npm run dev                 # http://localhost:5173
+npm run dev
 ```
 
-### Tests
+Open http://localhost:5173. The dev server proxies `/api` to the backend, so both must be
+running.
+
+## Tests
+
+Backend:
 
 ```bash
-cd backend && pytest
-cd frontend && npm run test
+cd backend
+pytest
 ```
 
-_More detailed instructions are filled in as the project is built out._
+Frontend:
+
+```bash
+cd frontend
+npm run test
+```
+
+## Seeding
+
+The seed is deterministic — the same seed produces identical data every run.
+
+```bash
+cd backend
+python -m app.seed              # 10,000 employees (default)
+python -m app.seed --count 500  # smaller dataset
+python -m app.seed --seed 7     # different deterministic dataset
+```
+
+## Documentation & artifacts
+
+| Document | Contents |
+| --- | --- |
+| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | One-page scope, features, deliberate non-goals |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System, data-model, deployment & flow diagrams; tech rationale; performance |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Key trade-offs and the reasoning behind them |
+| [`docs/PROMPTS.md`](docs/PROMPTS.md) | How AI tools were used, with representative prompts |
+| [`docs/DEMO.md`](docs/DEMO.md) | Click-through script for the demo video |
